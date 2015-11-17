@@ -398,6 +398,10 @@ Params: speed                    Display SPI bus speed
 
         xohms                    Touchpanel sensitivity (X-plate resistance)
 
+Name:   openHiFi DA-2
+Info:   Configures the openHiFi DA-2 Audio Amplfier
+Load:   dtoverlay=openhifi-da-2
+Params: <None>
 
 [ The pcf2127-rtc overlay has been deleted. See i2c-rtc. ]
 

@@ -742,6 +742,20 @@ static struct platform_device snd_rpi_iqaudio_dac_device = {
         .num_resources = 0,
 };
 
+#if defined(CONFIG_SND_BCM2708_SOC_OPENHIFI_DA_2) || defined(CONFIG_SND_BCM2708_SOC_OPENHIFI_DA_2_MODULE)
+static struct platform_device snd_openhifi_da_2_device = {
+        .name = "snd-openhifi-da-2",
+        .id = 0,
+        .num_resources = 0,
+};
+
+static struct i2c_board_info __initdata snd_tas5518_i2c_devices[] = {
+        {
+                I2C_BOARD_INFO("tas5518", 0x1b)
+        },
+};
+#endif
+
 // Use the actual device name rather than generic driver name
 static struct i2c_board_info __initdata snd_pcm512x_i2c_devices[] = {
 	{

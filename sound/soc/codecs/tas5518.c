@@ -11,15 +11,9 @@
 
 #include <linux/module.h>
 #include <linux/moduleparam.h>
-#include <linux/init.h>
-#include <linux/delay.h>
-#include <linux/pm.h>
 #include <linux/i2c.h>
 #include <linux/of_device.h>
-#include <linux/spi/spi.h>
 #include <linux/regmap.h>
-#include <linux/regulator/consumer.h>
-#include <linux/slab.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
@@ -28,8 +22,6 @@
 #include <sound/tlv.h>
 
 #include <linux/kernel.h>
-#include <linux/string.h>
-#include <linux/fs.h>
 
 #include "tas5518.h"
  
@@ -74,8 +66,26 @@ static int tas5518_hw_params(struct snd_pcm_substream *substream,
 							struct snd_pcm_hw_params *params,
 							struct snd_soc_dai *dai)
 {
-	// Add code here to configure the serial interface of the codec
-	// Per default the coded automatically detects the format and bit rate
+        u8 blen = 0;
+        
+        struct snd_soc_codec *codec;
+        codec = dai->codec;
+        priv_data->codec = dai->codec;
+	
+        switch(params_format(params)) {
+                case SNDRV_PCM_FORMAT_S16_LE:
+                        blen = 0x03;
+                        break;
+                case SNDRV_PCM_FORMAT_S24_LE:
+                        blen = 0x05;
+                        break;
+                default:
+                        dev_err(dai->dev, "Unsupported word length: %u\n", params_format(params));
+                        return -EINVAL;
+        }
+        
+        snd_soc_update_bits(codec, TAS5518_SERIAL_DATA_IF, 0x07, blen);
+        
 	return 0;
 }
 
@@ -167,9 +177,9 @@ static struct snd_soc_codec_driver soc_codec_tas5518 = {
 };
 
 
-/*
+/**********************************
  *	I2C Driver
- */
+ **********************************/
 
 static const struct reg_default tas5518_reg_defaults[] = {
 	{0x0F, 0x00}, // Softmute Register - Unmute all channels_max
@@ -193,7 +203,6 @@ static bool tas5518_reg_volatile(struct device *dev, unsigned int reg)
 		 	return true;
 		 default:
 		 	return false;
-			 
 	 }
 }
 

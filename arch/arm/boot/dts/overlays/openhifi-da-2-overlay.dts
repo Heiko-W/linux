@@ -1,0 +1,39 @@
+// Definitions for openHifi DA-2
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2708";
+
+	fragment@0 {
+		target = <&sound>;
+		__overlay__ {
+			compatible = "openhifi,openhifi-da-2";
+			i2s-controller = <&i2s>;
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target = <&i2s>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target = <&i2c1>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			tas5518@1b {
+				#sound-dai-cells = <0>;
+				compatible = "ti,tas5518";
+				reg = <0x1b>;
+				status = "okay";
+			};
+		};
+	};
+};
