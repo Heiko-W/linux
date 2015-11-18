@@ -17,7 +17,7 @@ snd-soc-rpi-dac-objs := rpi-dac.o
 snd-soc-rpi-proto-objs := rpi-proto.o
 snd-soc-iqaudio-dac-objs := iqaudio-dac.o
 snd-soc-raspidac3-objs := raspidac3.o
-snd-soc-openhifi-da-2 := openhifi-da-2.o
+snd-soc-openhifi-da-2-objs := openhifi_da_2.o
 
 obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
 obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS) += snd-soc-hifiberry-dacplus.o
