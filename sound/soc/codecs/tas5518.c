@@ -139,9 +139,10 @@ struct snd_soc_dai_driver tas5518_dai = {
         
         //Check device ID
         ret = snd_soc_read(codec, TAS5518_DEV_ID);
-        if (ret && TAS5518_DEVICE_ID_MASK != TAS5518_DEVICE_ID) {
+        if ((ret && TAS5518_DEVICE_ID_MASK) != TAS5518_DEVICE_ID) {
                 printk(KERN_ERR "Wrong Device ID for TAS5518: %d\n", ret);
         }
+        if (ret < 0) return ret;
         
         //Reset Error
         ret = snd_soc_write(codec, TAS5518_ERROR_STATUS, 0x00);
