@@ -111,7 +111,7 @@ static struct snd_soc_dai_ops tas5518_dai_ops = {
 };
 
 struct snd_soc_dai_driver tas5518_dai = {
-	.name = "tas5518",
+	.name = "tas5518-hifi",
 	.playback = {
 		.stream_name = "Playback",
 		.channels_min = 1,

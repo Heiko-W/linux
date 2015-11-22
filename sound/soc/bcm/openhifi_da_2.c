@@ -45,7 +45,7 @@ static struct snd_soc_dai_link snd_rpi_openhifi_da_2_dai[] = {
                 .name           = "openHiFi DA-2",
                 .stream_name    = "openHiFi DA-2 Stereo",
                 .cpu_dai_name   = "bcm2708-i2s.0",
-                .codec_dai_name = "tas5518",
+                .codec_dai_name = "tas5518-hifi",
                 .platform_name  = "bcm2708-i2s.0",
                 .codec_name     = "tas5518.1-001b",
                 .dai_fmt        = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS,
@@ -105,7 +105,7 @@ static int snd_rpi_openhifi_da_2_remove(struct platform_device *pdev)
 
 static struct platform_driver snd_rpi_openhifi_da_2_driver = {
         .driver = {
-                .name           = "openhifi-da-2",
+                .name           = "snd-openhifi-da-2",
                 .owner          = THIS_MODULE,
                 .of_match_table = snd_rpi_openhifi_da_2_of_match,
         },
