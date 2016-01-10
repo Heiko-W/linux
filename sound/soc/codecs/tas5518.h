@@ -11,44 +11,40 @@
 
 #define DRV_NAME "TAS5518"
 
+  /*********************/
+ /* TAS5518 registers */
+/*********************/
 
-/*
- * TAS5518 I2C Addresses
- */
-#define TAS5518_I2C_READ		0x37
-#define TAS5518_I2C_WRITE		0x36
+#define TAS5518_CLK_CTRL             0x00        /* Clock Control register*/
+#define TAS5518_DEV_ID               0x01        /* Device ID register */
+#define TAS5518_ERROR_STATUS         0x02        /* Error status register */
+#define TAS5518_SYS_CONTROL_1        0x03        /* System control register 1 */
+#define TAS5518_SYS_CONTROL_2        0x04        /* System control register 2 */
+#define TAS5518_CHANNEL_CONFIG(X)   (0x05 + (X)) /* Channel Configuration Register 1-8*/
+#define TAS5518_HEADPHONE_CONFIG     0x0D	 /* Headphone configuration control register */
+#define TAS5518_SERIAL_DATA_IF       0x0E	 /* Serial data interface register  */
+#define TAS5518_SOFT_MUTE            0x0F	 /* Soft mute register */
+#define TAS5518_ENERGY_MGR           0x10	 /* Energy Managers Register */
+#define TAS5518_OSC_TRIM             0x12	 /* Oscillator trim register */
+#define TAS5518_AUTOMUTE_CTRL        0x14	 /* Automute control register */
+#define TAS5518_AM_PWM_THRESHOLD     0x15	 /* Automute PWM threshold and back-end reset period register*/
+#define TAS5518_MODULATION_LIMIT     0x16        /* Modulation Limit Reg 1-4 with 2 channels per register */
+#define TAS5518_IC_DELAY(X)         (0x1B + (X)) /* IC Delay Channel 1-8 */
+#define TAS5518_CHANNEL_SHUTDOWN     0x27	     /* Individual Channel Shutdown */
+#define TAS5518_INPUT_MUX(X)        (0x30 + (X)) /* Input MUX 1-4 with 2 channels per register byte */
+#define TAS5518_PWM_MUX(X)          (0x34 + (X)) /* Input MUX 1-4 with 2 channels per register byte */
+#define TAS5518_CHANNEL_VOL(X)      (0xD0 + (X)) /* Channel 1-8 Volume*/
+#define TAS5518_MASTER_VOL           0xD9	     /* Master volume  */
 
-/*
- * TAS5518 registers
- */
+#define TAS5518_MAX_REGISTER         0xE0
 
-#define TAS5518_DEV_ID			0x01	 /* Device ID register */
-#define TAS5518_ERROR_STATUS		0x02     /* Error status register */
-#define TAS5518_SYS_CONTROL_1		0x03     /* System control register 1 */
-#define TAS5518_SYS_CONTROL_2		0x04     /* System control register 2 */
-#define TAS5518_CHANNEL_CONFIG(X)	(0x05 + (X)) /* Channel Configuration Register 1-8*/
-#define TAS5518_HEADPHONE_CONFIG	0x0D	/* Headphone configuration control register */
-#define TAS5518_SERIAL_DATA_IF		0x0E	/* Serial data interface register  */
-#define TAS5518_SOFT_MUTE		0x0F	/* Soft mute register */
-#define TAS5518_ENERGY_MGR		0x10	/* Energy Managers Register */
-#define TAS5518_OSC_TRIM		0x12	/* Oscillator trim register */
-#define TAS5518_AUTOMUTE_CTRL		0x14	/* Automute control register */
-#define TAS5518_AM_PWM_THRESHOLD	0x15	/* Automute PWM threshold and back-end reset period register*/
-#define TAS5518_MODULATION_LIMIT(X)     (0x16 + (X)) /* Modulation Limit Reg 1-4 with 2 channels per register */
-#define TAS5518_IC_DELAY(X)		(0x1B + (X)) /* IC Delay Channel 1-8 */
-#define TAS5518_CHANNEL_SHUTDOWN	0x27	/* Individual Channel Shutdown */
-#define TAS5518_INPUT_MUX(X)		(0x30 + (X)) /* Input MUX 1-4 with 2 channels per register byte */
-#define TAS5518_PWM_MUX(X)		(0x34 + (X)) /* Input MUX 1-4 with 2 channels per register byte */
-#define TAS5518_CHANNEL_VOL(X)		(0xD1 + (X)) /* Channel 1-8 Volume*/
-#define TAS5518_MASTER_VOL		0xD9	/* Master volume  */
 
-#define TAS5518_MAX_REGISTER            0xE0
+  /*******************************/
+ /* TAS5518 Bitmasks and Values */
+/*******************************/
 
-/*
- * TAS5518 Bitmasks and Values
- */
-#define TAS5518_DEVICE_ID		0x01		/* Identification code for TAS5518 */
-#define TAS5518_DEVICE_ID_MASK          0x3F            /* ID Register Mask*/
+#define TAS5518_DEVICE_ID       0x02    /* Identification code for TAS5518 */
+#define TAS5518_DEVICE_ID_MASK  0x3F    /* ID Register Mask*/
 
 
 struct tas5518_init_command {
@@ -61,4 +57,22 @@ static const struct tas5518_init_command tas5518_init_sequence[] = {
         { .size = 2,  .data = "\x03\x90" },
         // Modulation Index Limit Register - Limit (DCLKS) = 5 & MIN WIDTH (DCLKS) = 10 & MODULATION INDEX = 96.1%
         { .size = 2,  .data = "\x16\x04" },
+        // Set Master Volume
+        { .size = 5,  .data = "\xD9\x00\x00\x00\x90" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD1\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD2\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD3\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD4\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD5\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD6\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD7\x00\x00\x00\x48" },
+        // Set Channel Volume to 0dB
+        { .size = 5,  .data = "\xD8\x00\x00\x00\x48" },
 };
