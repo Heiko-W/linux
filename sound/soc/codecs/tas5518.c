@@ -60,6 +60,8 @@ struct tas5518_priv {
         struct snd_soc_codec *codec;
 };
 
+static struct i2c_client *i2c;
+
   /***********************************/ 
  /* Codec DAI and PCM configuration */
 /***********************************/
@@ -112,11 +114,11 @@ static int tas5518_init(struct device *dev, struct tas5518_priv *priv_data)
 {
         int ret;
         
-        //Reset Error
+        // Reset Error
         ret = regmap_write (priv_data->regmap, TAS5518_ERROR_STATUS, (u8)0x00);
         if (ret < 0) 
                 return ret;
-                
+              
         /* Set System Control Register */
         ret = regmap_write(priv_data->regmap, TAS5518_SYS_CONTROL_1, (u8)0x90);
         if (ret < 0) 
@@ -159,7 +161,17 @@ struct snd_soc_dai_driver tas5518_dai = {
  static int tas5518_probe(struct snd_soc_codec *codec) 
  {
         struct tas5518_priv *priv_data = snd_soc_codec_get_drvdata(codec);
-        int ret;
+        int ret, i;
+        
+        i2c = container_of(codec->dev, struct i2c_client, dev);
+                
+        // Write Init Sequence to Codec
+        for (i = 0 ; i < ARRAY_SIZE(tas5518_init_sequence); ++i) {
+                ret = i2c_master_send(i2c, tas5518_init_sequence[i].data, tas5518_init_sequence[i].size);
+                if(ret < 0) {
+                        printk(KERN_INFO "TAS5518 Codec Probe: Init Sequence returns: %d\n", ret);
+                }
+        }
 
         // Init Codec
         ret = tas5518_init(codec->dev, priv_data);
@@ -428,10 +440,9 @@ static int __init tas5518_modinit(void)
 }
 
 
-static int __exit tas5518_exit(void)
+static void __exit tas5518_exit(void)
 {
         i2c_del_driver(&tas5518_i2c_driver);
-        return 0;
 }
 
 
