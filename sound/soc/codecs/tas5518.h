@@ -46,6 +46,11 @@
 #define TAS5518_DEVICE_ID       0x02    /* Identification code for TAS5518 */
 #define TAS5518_DEVICE_ID_MASK  0x3F    /* ID Register Mask*/
 
+#define TAS5518_DATA_RATE(val)	(val << 5)
+#define TAS5518_DATA_RATE_MASK  0x0E    /* Data Rate Mask Clock Control Register*/
+
+#define TAS5518_CLK_IDX_MCLK	0
+#define TAS5518_CLK_IDX_SCLK	1
 
 struct tas5518_init_command {
         const int size;
@@ -68,7 +73,7 @@ static const struct tas5518_init_command tas5518_init_sequence[] = {
                                     \x00\x00\x00\x00\
                                     \x00\x00\x00\x00\
                                     \x00\x00\x00\x00" },
-        
+
         // Channel 1 to Channel 8 Mixer
         { .size = 5,  .data = "\x49\x00\x80\x00\x00" },       
         // Channel 2 to Channel 8 Mixer
@@ -90,6 +95,5 @@ static const struct tas5518_init_command tas5518_init_sequence[] = {
         { .size = 5,  .data = "\x87\x00\xFE\xB5\xE1" }, 
         // Biquad Filter 100 Hz Lowpass
         { .size = 5,  .data = "\x88\xFF\x81\x48\x78" }, 
-
         */
 };

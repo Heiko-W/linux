@@ -11,15 +11,21 @@
 
 #include <linux/module.h>
 #include <linux/i2c.h>
+#include <linux/delay.h>
 #include <linux/of_device.h>
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 #include <linux/regmap.h>
+#include <linux/device.h>
+
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <sound/initval.h>
 #include <sound/tlv.h>
+
 #include "tas5518.h"
- 
+
 #define TAS5518_PCM_FORMATS (SNDRV_PCM_FMTBIT_S16_LE  |		\
 			     SNDRV_PCM_FMTBIT_S20_3LE |		\
 			     SNDRV_PCM_FMTBIT_S24_3LE)
@@ -28,7 +34,7 @@
 			     SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_88200  | \
 			     SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_176400 | \
 			     SNDRV_PCM_RATE_192000)
-                 
+
   /*****************/
  /* ALSA Controls */
 /*****************/
@@ -57,6 +63,7 @@ struct tas5518_priv {
         unsigned int         mclk, sclk;
         unsigned int         format;
         int                  rate; 
+        int                  gpio_nreset;
         struct snd_soc_codec *codec;
 };
 
@@ -72,11 +79,11 @@ static int tas5518_hw_params(struct snd_pcm_substream *substream,
 {
         int ret;
         u8 blen = 0;
-        
+
         struct snd_soc_codec *codec = dai->codec;
         struct tas5518_priv *priv_data = snd_soc_codec_get_drvdata(codec);
         priv_data->codec = dai->codec;
-        
+
         switch(params_format(params)) {
                 case SNDRV_PCM_FORMAT_S16_LE:
                         blen = 0x03;
@@ -88,11 +95,12 @@ static int tas5518_hw_params(struct snd_pcm_substream *substream,
                         dev_err(dai->dev, "Unsupported word length: %u\n", params_format(params));
                         return -EINVAL;
         }
-        
+
         ret = regmap_update_bits(priv_data->regmap, TAS5518_SERIAL_DATA_IF, (u8)0x07, blen);
-        if (ret <0)
-                return ret;
-                
+
+	if (ret < 0)
+		return ret;
+
         return 0;
 }
 
@@ -101,7 +109,7 @@ static int tas5518_mute(struct snd_soc_dai *dai, int mute)
 {
         struct snd_soc_codec *codec = dai->codec;
         struct tas5518_priv *priv_data = snd_soc_codec_get_drvdata(codec);
-	
+
 	if (mute)
                 regmap_write(priv_data->regmap, TAS5518_SOFT_MUTE, (u8)0xFF);
 	else
@@ -109,36 +117,50 @@ static int tas5518_mute(struct snd_soc_dai *dai, int mute)
         return 0;
 }
 
+// Codec Reset Function
+static void tas5518_reset(struct tas5518_priv *priv_data)
+{
+	if (gpio_is_valid(priv_data->gpio_nreset)) {
+		/* Reset codec - minimum assertion time is 400ns */
+		gpio_set_value(priv_data->gpio_nreset, 0);
+                mdelay(1);
+		gpio_set_value(priv_data->gpio_nreset, 1);
+                
+		/* Codec needs ~200ms to wake up */
+		msleep(200);
+	}
+}
+
 // Codec Init Function
 static int tas5518_init(struct device *dev, struct tas5518_priv *priv_data)
 {
         int ret;
-        
+
         // Reset Error
         ret = regmap_write (priv_data->regmap, TAS5518_ERROR_STATUS, (u8)0x00);
-        if (ret < 0) 
+        if (ret < 0)
                 return ret;
-              
+
         /* Set System Control Register */
         ret = regmap_write(priv_data->regmap, TAS5518_SYS_CONTROL_1, (u8)0x90);
-        if (ret < 0) 
+        if (ret < 0)
                 return ret;
-                
+
         /* Set Modulation Limit Register*/
         ret = regmap_write(priv_data->regmap, TAS5518_MODULATION_LIMIT, (u8)0x04);
-        if (ret < 0) 
+        if (ret < 0)
                 return ret;
-                
+
         /* Set Master Volume */
         ret = regmap_write(priv_data->regmap, TAS5518_MASTER_VOL, (int)0x90);
-        if (ret < 0) 
+        if (ret < 0)
                 return ret;
-                
+
         return 0;
 }
 
 static struct snd_soc_dai_ops tas5518_dai_ops = {
-	.hw_params     = tas5518_hw_params,
+        .hw_params     = tas5518_hw_params,
 	.digital_mute  = tas5518_mute,
 };
 
@@ -157,31 +179,31 @@ struct snd_soc_dai_driver tas5518_dai = {
   /*********************/
  /* Codec Driver Part */
 /*********************/
- 
- static int tas5518_probe(struct snd_soc_codec *codec) 
+
+ static int tas5518_probe(struct snd_soc_codec *codec)
  {
         struct tas5518_priv *priv_data = snd_soc_codec_get_drvdata(codec);
         int ret, i;
-        
+
         i2c = container_of(codec->dev, struct i2c_client, dev);
-                
+
         // Write Init Sequence to Codec
         for (i = 0 ; i < ARRAY_SIZE(tas5518_init_sequence); ++i) {
                 ret = i2c_master_send(i2c, tas5518_init_sequence[i].data, tas5518_init_sequence[i].size);
                 if(ret < 0) {
-                        printk(KERN_INFO "TAS5518 Codec Probe: Init Sequence returns: %d\n", ret);
+                        dev_err(codec->dev, "TAS5518 Codec Probe: Init Sequence returns: %d\n", ret);
                 }
         }
 
         // Init Codec
         ret = tas5518_init(codec->dev, priv_data);
-        if (ret < 0) 
+        if (ret < 0)
                 return ret;
-        
-        return 0;	 
+
+        return 0;
  }
- 
- static int tas5518_remove(struct snd_soc_codec *codec) 
+
+ static int tas5518_remove(struct snd_soc_codec *codec)
  {
 	 struct tas5518_priv *tas5518;
 	 tas5518 = snd_soc_codec_get_drvdata(codec);
@@ -231,8 +253,8 @@ static const struct reg_default tas5518_reg_defaults[] = {
         {0xD9, 0x0245},
 };
 
- 
-static bool tas5518_reg_volatile(struct device *dev, unsigned int reg) 
+
+static bool tas5518_reg_volatile(struct device *dev, unsigned int reg)
 {
 	 switch (reg) {
 		 case TAS5518_DEV_ID:
@@ -303,7 +325,7 @@ static int tas5518_reg_write(void *context, unsigned int reg,
 	else
 		return -EIO;
 }
-                              
+
 static int tas5518_reg_read(void *context, unsigned int reg,
 			     unsigned int *value)
 {
@@ -352,7 +374,7 @@ static const struct of_device_id tas5518_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, tas5518_of_match);
 
- 
+
 static struct regmap_config tas5518_regmap_config = {
         .reg_bits               = 8,
         .val_bits               = 32,
@@ -373,6 +395,7 @@ static int tas5518_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id 
 	struct tas5518_priv *priv_data;
         struct device *dev = &i2c->dev;
         int ret;
+        int gpio_nreset = -EINVAL;
         unsigned int  i;
 
 	priv_data = devm_kzalloc(dev, sizeof(*priv_data), GFP_KERNEL);
@@ -387,16 +410,35 @@ static int tas5518_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id 
 	}
 
 	i2c_set_clientdata(i2c, priv_data);
-                
+
+        if (of_match_device(of_match_ptr(tas5518_of_match), dev)) {
+		struct device_node *of_node = dev->of_node;
+		gpio_nreset = of_get_named_gpio(of_node, "reset-gpio", 0);
+	}
+
+        //gpio_nreset = 17;
+	if (gpio_is_valid(gpio_nreset)){
+                if (devm_gpio_request(dev, gpio_nreset, "TAS5518 Reset")) {
+                        dev_err(&i2c->dev, "GPIO request failed for: %d\n", gpio_nreset);
+                        gpio_nreset = -EINVAL;
+                }
+        } else {
+                dev_err(&i2c->dev, "GPIO is not valid: %d\n", gpio_nreset);
+        }
+
+ 	priv_data->gpio_nreset = gpio_nreset;
+
+        tas5518_reset(priv_data);
+
         /* Check TAS5518 ID */
         ret = regmap_read(priv_data->regmap, TAS5518_DEV_ID, &i);
         if (ret < 0) return ret;
-        
+
         if ((i & TAS5518_DEVICE_ID_MASK) != TAS5518_DEVICE_ID) {
-                printk(KERN_ERR "Wrong Device ID for TAS5518: %d\n", i);
+                dev_err(&i2c->dev, "Wrong Device ID for TAS5518: %d\n", i);
                 return -ENODEV;
         }
-        
+
 	ret = snd_soc_register_codec(&i2c->dev, &soc_codec_tas5518,
 					     &tas5518_dai, 1);
 	return ret;

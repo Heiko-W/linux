@@ -32,8 +32,20 @@
 				#sound-dai-cells = <0>;
 				compatible = "ti,tas5518";
 				reg = <0x1b>;
+                                pinctrl-names = "default";
+                                pinctrl-0  = <&openhifi_pins>;
+                                reset-gpio = <&gpio 13 0>;
 				status = "okay";
 			};
+		};
+	};
+        fragment@3 {
+		target = <&gpio>;
+		__overlay__ {
+                        openhifi_pins: openhifi_pins {
+                                brcm,pins = <13>;
+				brcm,function = <1>; // out
+                        };
 		};
 	};
 };
